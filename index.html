@@ -1,0 +1,142 @@
+document.getElementById('fitnessForm').addEventListener('submit', function(event) {
+    event.preventDefault(); 
+    
+    const objective = document.getElementById('objective').value;
+    const frequency = parseInt(document.getElementById('frequency').value);
+    
+    let tableHTML = '<h2>Your Personalized 4-Week Training Program</h2>';
+    tableHTML += `<p><strong>Objective:</strong> ${document.querySelector('#objective option:checked').textContent} | <strong>Training Days Per Week:</strong> ${frequency}</p>`;
+    
+    tableHTML += '<div id="printableWorkout">'; // Wrapper for print/PDF
+    tableHTML += '<table class="workout-table">';
+    tableHTML += '<thead><tr><th>Week Day</th><th>Target Muscle/Activity</th><th>Sets x Reps</th><th>Notes/Focus</th></tr></thead>';
+    tableHTML += '<tbody>';
+
+    // --- Define YouTube Video Links for Exercises ---
+    const exerciseLinks = {
+        'Plank': 'https://www.youtube.com/watch?v=pSHjTRCQxIw',
+        'Push-up': 'https://www.youtube.com/watch?v=IODxDxX7oi4',
+        'Squat': 'https://www.youtube.com/watch?v=aclHkVaku9U',
+        'Burpee': 'https://www.youtube.com/watch?v=dZgVxmf6jkA',
+        'Lunge': 'https://www.youtube.com/watch?v=QOVaHwm-Q6U',
+        'Deadlift': 'https://www.youtube.com/watch?v=op9kVnSso6Q',
+        'Overhead Press': 'https://www.youtube.com/watch?v=B-aVuyhvLHU',
+        'Dumbbell Row': 'https://www.youtube.com/watch?v=pYcpY20QaE8',
+        'Lat Pulldown': 'https://www.youtube.com/watch?v=CAwf7n6Luuc',
+        'Leg Press': 'https://www.youtube.com/watch?v=IZxyjW7MPJQ'
+    };
+
+    // --- Define 4 core workout routines based on objective and frequency ---
+    const workoutRoutines = {
+        gain_muscle: {
+            3: [
+                { day: 'Workout 1', target: 'Push (Chest, Shoulders, Triceps)', setsReps: '4 x 8-12', notes: 'Heavy Compound Lift Focus: Bench Press (4x6). Accessories: Overhead Press, Tricep Extension.' },
+                { day: 'Workout 2', target: 'Pull (Back, Biceps, Traps)', setsReps: '3 x 10-15', notes: 'Heavy Compound Lift Focus: Barbell Rows (4x8). Accessories: Lat Pulldowns, Bicep Curls.' },
+                { day: 'Workout 3', target: 'Legs (Quads, Hams, Calves)', setsReps: '3-4 x 10-20', notes: 'Heavy Compound Lift Focus: Squats (4x8). Accessories: Leg Press, Romanian Deadlifts.' }
+            ],
+        },
+        lose_weight: {
+            3: [
+                { day: 'Workout 1', target: 'Full Body Circuit', setsReps: '3 Rounds', notes: 'High Intensity Interval Training (HIIT): Bodyweight Squats, Push-ups, Burpees. 45s work / 15s rest.' },
+                { day: 'Workout 2', target: 'Steady-State Cardio', setsReps: '45 mins', notes: 'Brisk walk, cycling, or jogging. Keep heart rate steady.' },
+                { day: 'Workout 3', target: 'Core & Endurance', setsReps: '3 Rounds', notes: 'Planks, Russian Twists, Mountain Climbers. Focus on maintaining intensity.' }
+            ]
+        },
+        stay_healthy: {
+            3: [
+                { day: 'Workout 1', target: 'Mobility & Posture', setsReps: '30 mins', notes: 'Cat-Cow, Bird-Dog, Thoracic Rotations. Focus on range of motion.' },
+                { day: 'Workout 2', target: 'Light Resistance', setsReps: '3 x 15', notes: 'Resistance Band Pull-aparts, Light Dumbbell Presses, Step-ups.' },
+                { day: 'Workout 3', target: 'Yoga/Stretching', setsReps: '45 mins', notes: 'Focus on deep breaths and holding poses (e.g., Warrior, Downward Dog).' }
+            ]
+        }
+    };
+
+    const trainingPlan = workoutRoutines[objective][frequency] || workoutRoutines[objective][3] || [
+         { day: 'N/A', target: 'Rest Day / Activity', setsReps: 'N/A', notes: 'Workout plan could not be generated for this frequency. Please select 3 or 4 days per week for a structured plan.' }
+    ];
+
+    for (let week = 1; week <= 4; week++) {
+        tableHTML += `<tr><td colspan="4" class="week-header">🔥 WEEK ${week}: Base Building / Progressive Overload Focus</td></tr>`;
+
+        for (let i = 0; i < trainingPlan.length; i++) {
+            const workout = trainingPlan[i];
+            const exerciseName = workout.target.split(' ')[0];  // Just using the first word (e.g., "Push" or "Squat")
+            const videoLink = exerciseLinks[exerciseName] || ''; // Find the YouTube link for the exercise
+            
+            tableHTML += `
+                <tr>
+                    <td>${workout.day}</td>
+                    <td><strong>${workout.target}</strong></td>
+                    <td>${workout.setsReps}</td>
+                    <td>
+                        ${workout.notes} <br>
+                        ${videoLink ? `<a href="${videoLink}" target="_blank" style="color: #337ab7;">Watch video for instructions</a>` : ''}
+                    </td>
+                </tr>
+            `;
+        }
+
+        const restDays = 7 - trainingPlan.length;
+        if (restDays > 0) {
+             tableHTML += `
+                <tr>
+                    <td>Rest Days (${restDays} days)</td>
+                    <td>Recovery & Active Rest</td>
+                    <td>N/A</td>
+                    <td>Walk, stretch, and prioritize sleep. Prepare for the next week!</td>
+                </tr>
+            `;
+        }
+    }
+
+    tableHTML += '</tbody></table>';
+    tableHTML += '</div>'; // Close printableWorkout div
+
+    // Add Print/Download buttons
+    tableHTML += `
+        <div class="print-download-buttons">
+            <button onclick="window.print()" style="background-color: #337ab7;">🖨️ Print Workout</button>
+            <button id="downloadPdfButton" style="background-color: #d9534f;">⬇️ Download PDF</button>
+        </div>
+    `;
+    
+    document.getElementById('workoutTableContainer').innerHTML = tableHTML;
+
+    // --- 3. PDF DOWNLOAD LOGIC --- Adding Links in the PDF ---
+    document.getElementById('downloadPdfButton').addEventListener('click', function() {
+        const element = document.getElementById('printableWorkout');
+        const { jsPDF } = window.jspdf;
+
+        // Use html2canvas to render the HTML content to an image canvas
+        html2canvas(element, {
+            scale: 2, // Higher scale for better quality
+            useCORS: true,
+            logging: false,
+            scrollX: 0,
+            scrollY: -window.scrollY // Ensure content is captured from top of page
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+
+            // Add the image (content) to the PDF
+            const imgProps = pdf.getImageProperties(imgData);
+            const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+
+            // Add YouTube video links at the bottom of the page
+            const exercises = ['Plank', 'Push-up', 'Squat', 'Burpee', 'Lunge', 'Deadlift', 'Overhead Press', 'Dumbbell Row', 'Lat Pulldown', 'Leg Press'];
+            exercises.forEach((exercise, index) => {
+                const yPosition = pdfHeight - 10 - (index * 10); // Add some space between each link
+                const videoUrl = exerciseLinks[exercise];
+                if (videoUrl) {
+                    pdf.textWithLink(`${exercise}: Watch tutorial`, 10, yPosition, { url: videoUrl });
+                }
+            });
+
+            // Save the PDF
+            pdf.save('4-Week-Fitness-Plan-with-Video-Links.pdf');
+        });
+    });
+});
