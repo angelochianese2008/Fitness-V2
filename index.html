@@ -1,142 +1,332 @@
-document.getElementById('fitnessForm').addEventListener('submit', function(event) {
-    event.preventDefault(); 
-    
-    const objective = document.getElementById('objective').value;
-    const frequency = parseInt(document.getElementById('frequency').value);
-    
-    let tableHTML = '<h2>Your Personalized 4-Week Training Program</h2>';
-    tableHTML += `<p><strong>Objective:</strong> ${document.querySelector('#objective option:checked').textContent} | <strong>Training Days Per Week:</strong> ${frequency}</p>`;
-    
-    tableHTML += '<div id="printableWorkout">'; // Wrapper for print/PDF
-    tableHTML += '<table class="workout-table">';
-    tableHTML += '<thead><tr><th>Week Day</th><th>Target Muscle/Activity</th><th>Sets x Reps</th><th>Notes/Focus</th></tr></thead>';
-    tableHTML += '<tbody>';
-
-    // --- Define YouTube Video Links for Exercises ---
-    const exerciseLinks = {
-        'Plank': 'https://www.youtube.com/watch?v=pSHjTRCQxIw',
-        'Push-up': 'https://www.youtube.com/watch?v=IODxDxX7oi4',
-        'Squat': 'https://www.youtube.com/watch?v=aclHkVaku9U',
-        'Burpee': 'https://www.youtube.com/watch?v=dZgVxmf6jkA',
-        'Lunge': 'https://www.youtube.com/watch?v=QOVaHwm-Q6U',
-        'Deadlift': 'https://www.youtube.com/watch?v=op9kVnSso6Q',
-        'Overhead Press': 'https://www.youtube.com/watch?v=B-aVuyhvLHU',
-        'Dumbbell Row': 'https://www.youtube.com/watch?v=pYcpY20QaE8',
-        'Lat Pulldown': 'https://www.youtube.com/watch?v=CAwf7n6Luuc',
-        'Leg Press': 'https://www.youtube.com/watch?v=IZxyjW7MPJQ'
-    };
-
-    // --- Define 4 core workout routines based on objective and frequency ---
-    const workoutRoutines = {
-        gain_muscle: {
-            3: [
-                { day: 'Workout 1', target: 'Push (Chest, Shoulders, Triceps)', setsReps: '4 x 8-12', notes: 'Heavy Compound Lift Focus: Bench Press (4x6). Accessories: Overhead Press, Tricep Extension.' },
-                { day: 'Workout 2', target: 'Pull (Back, Biceps, Traps)', setsReps: '3 x 10-15', notes: 'Heavy Compound Lift Focus: Barbell Rows (4x8). Accessories: Lat Pulldowns, Bicep Curls.' },
-                { day: 'Workout 3', target: 'Legs (Quads, Hams, Calves)', setsReps: '3-4 x 10-20', notes: 'Heavy Compound Lift Focus: Squats (4x8). Accessories: Leg Press, Romanian Deadlifts.' }
-            ],
-        },
-        lose_weight: {
-            3: [
-                { day: 'Workout 1', target: 'Full Body Circuit', setsReps: '3 Rounds', notes: 'High Intensity Interval Training (HIIT): Bodyweight Squats, Push-ups, Burpees. 45s work / 15s rest.' },
-                { day: 'Workout 2', target: 'Steady-State Cardio', setsReps: '45 mins', notes: 'Brisk walk, cycling, or jogging. Keep heart rate steady.' },
-                { day: 'Workout 3', target: 'Core & Endurance', setsReps: '3 Rounds', notes: 'Planks, Russian Twists, Mountain Climbers. Focus on maintaining intensity.' }
-            ]
-        },
-        stay_healthy: {
-            3: [
-                { day: 'Workout 1', target: 'Mobility & Posture', setsReps: '30 mins', notes: 'Cat-Cow, Bird-Dog, Thoracic Rotations. Focus on range of motion.' },
-                { day: 'Workout 2', target: 'Light Resistance', setsReps: '3 x 15', notes: 'Resistance Band Pull-aparts, Light Dumbbell Presses, Step-ups.' },
-                { day: 'Workout 3', target: 'Yoga/Stretching', setsReps: '45 mins', notes: 'Focus on deep breaths and holding poses (e.g., Warrior, Downward Dog).' }
-            ]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Fitness Generator</title>
+    <style>
+        /* Base Styling (Light Mode Defaults) */
+        :root {
+            --bg-color: #f4f4f9;
+            --container-bg: #fff;
+            --text-color: #333;
+            --header-color: #333;
+            --input-border: #ccc;
+            --button-bg: #5cb85c;
+            --button-hover: #4cae4c;
+            --table-header-bg: #f0f0f0;
+            --week-header-bg: #337ab7;
         }
-    };
 
-    const trainingPlan = workoutRoutines[objective][frequency] || workoutRoutines[objective][3] || [
-         { day: 'N/A', target: 'Rest Day / Activity', setsReps: 'N/A', notes: 'Workout plan could not be generated for this frequency. Please select 3 or 4 days per week for a structured plan.' }
-    ];
+        /* Dark Mode Override */
+        .dark-mode {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #f0f0f0;
+            --header-color: #5cb85c;
+            --input-border: #444;
+            --button-bg: #5cb85c;
+            --button-hover: #4cae4c;
+            --table-header-bg: #2a2a2a;
+            --week-header-bg: #4a4a4a;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+            position: relative; /* For background visuals */
+            overflow-x: hidden;
+        }
+        
+        /* Background Visuals (Subtle Fitness-related Circles) */
+        .bg-visual {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: rgba(92, 184, 92, 0.1); /* Light green tint */
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(50px);
+            opacity: 0.6;
+        }
+        .bg-visual:nth-child(1) { top: 10%; left: 5%; }
+        .bg-visual:nth-child(2) { bottom: 15%; right: 10%; width: 200px; height: 200px; }
+        .bg-visual:nth-child(3) { top: 50%; right: 5%; width: 100px; height: 100px; }
 
-    for (let week = 1; week <= 4; week++) {
-        tableHTML += `<tr><td colspan="4" class="week-header">🔥 WEEK ${week}: Base Building / Progressive Overload Focus</td></tr>`;
+        .container {
+            max-width: 90%; 
+            margin: auto;
+            padding: 20px;
+            background: var(--container-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            color: var(--header-color);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        button {
+            background-color: var(--button-bg);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: var(--button-hover);
+        }
 
-        for (let i = 0; i < trainingPlan.length; i++) {
-            const workout = trainingPlan[i];
-            const exerciseName = workout.target.split(' ')[0];  // Just using the first word (e.g., "Push" or "Squat")
-            const videoLink = exerciseLinks[exerciseName] || ''; // Find the YouTube link for the exercise
-            
-            tableHTML += `
-                <tr>
-                    <td>${workout.day}</td>
-                    <td><strong>${workout.target}</strong></td>
-                    <td>${workout.setsReps}</td>
-                    <td>
-                        ${workout.notes} <br>
-                        ${videoLink ? `<a href="${videoLink}" target="_blank" style="color: #337ab7;">Watch video for instructions</a>` : ''}
-                    </td>
-                </tr>
+        /* Table Styling */
+        #workoutTableContainer {
+            margin-top: 40px;
+            overflow-x: auto;
+        }
+        .workout-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            text-align: left;
+        }
+        .workout-table th, .workout-table td {
+            padding: 10px 12px;
+            border: 1px solid var(--input-border);
+        }
+        .workout-table th {
+            background-color: var(--table-header-bg);
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        .week-header {
+            background-color: var(--week-header-bg) !important;
+            color: white !important;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            body {
+                background-color: white;
+                color: black;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                max-width: 100% !important;
+                padding: 0;
+            }
+            #theme-toggle-container, 
+            .bg-visual, 
+            .form-group, 
+            #fitnessForm button {
+                display: none;
+            }
+            .workout-table {
+                font-size: 12pt;
+            }
+            .week-header {
+                background-color: #333 !important;
+                color: white !important;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="bg-visual"></div>
+    <div class="bg-visual"></div>
+    <div class="bg-visual"></div>
+
+    <div class="container">
+        <h1>Welcome! Define Your Fitness Goal 💪</h1>
+        
+        <form id="fitnessForm">
+            <div class="form-group">
+                <label for="objective">What is your primary goal?</label>
+                <select id="objective" name="objective" required>
+                    <option value="">-- Select Objective --</option>
+                    <option value="lose_weight">Lose Weight (Focus: Cardio & Full-Body)</option>
+                    <option value="gain_muscle">Gain Muscle (Focus: Compound Lifts & Hypertrophy)</option>
+                    <option value="stay_healthy">Stay Healthy (Focus: Mobility & Light Resistance)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                    <option value="">-- Select Gender --</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="height">Height (cm):</label>
+                <input type="number" id="height" name="height" min="100" max="250" required>
+            </div>
+
+            <div class="form-group">
+                <label for="weight">Weight (kg):</label>
+                <input type="number" id="weight" name="weight" min="30" max="300" required>
+            </div>
+
+            <div class="form-group">
+                <label for="age">Age:</label>
+                <input type="number" id="age" name="age" min="10" max="100" required>
+            </div>
+
+            <div class="form-group">
+                <label for="frequency">How many days per week can you train (1-6)?</label>
+                <input type="number" id="frequency" name="frequency" min="1" max="6" required>
+            </div>
+
+            <button type="submit">Generate My 4-Week Plan</button>
+        </form>
+
+        <div id="workoutTableContainer"></div>
+    </div>
+
+    <script>
+        const exerciseLinks = {
+            'Bench Press': 'https://www.youtube.com/watch?v=gRVjAtPip0Y',
+            'Overhead Press': 'https://www.youtube.com/watch?v=qEwKCR5JCog',
+            'Barbell Rows': 'https://www.youtube.com/watch?v=Zl5OsCVmf6k',
+            'Squats': 'https://www.youtube.com/watch?v=Dy28eq2PjcM',
+            'Lat Pulldowns': 'https://www.youtube.com/watch?v=CAwf7n6Luuc',
+            'Romanian Deadlifts': 'https://www.youtube.com/watch?v=2SHsk9AzdjA',
+            'Bodyweight Squats': 'https://www.youtube.com/watch?v=aclHkVaku9U',
+            'Push-ups': 'https://www.youtube.com/watch?v=IODxDxX7oi4',
+            'Burpees': 'https://www.youtube.com/watch?v=auBLPXO8Fww',
+            'Russian Twists': 'https://www.youtube.com/watch?v=wkD8rjkodUI',
+            'Mountain Climbers': 'https://www.youtube.com/watch?v=0p4v43vM9uY',
+            'Cat-Cow': 'https://www.youtube.com/watch?v=kqnua4mXh6A',
+            'Bird-Dog': 'https://www.youtube.com/watch?v=wiF4p9HkK5Y',
+            'Thoracic Rotations': 'https://www.youtube.com/watch?v=nxoEE1Bhk-0',
+            'Resistance Band Pull-aparts': 'https://www.youtube.com/watch?v=6shWGiC8Gyk',
+            'Dumbbell Chest Press': 'https://www.youtube.com/watch?v=VmB1G1K7v94',
+            'Lunges': 'https://www.youtube.com/watch?v=QOVaHwm-Q6U',
+            'Step-ups': 'https://www.youtube.com/watch?v=dQqApCGd5Ss'
+        };
+
+        // Dummy workout plan (for demonstration purposes)
+        const trainingPlan = [
+            { day: "Day 1", target: "Bench Press", setsReps: "3 sets of 8-12 reps", notes: "Focus on form" },
+            { day: "Day 2", target: "Squats", setsReps: "4 sets of 6-10 reps", notes: "Keep back straight" },
+            { day: "Day 3", target: "Overhead Press", setsReps: "3 sets of 8 reps", notes: "Elbows slightly bent at the top" }
+        ];
+
+        // Add YouTube Link function
+        function addYouTubeLinksToWorkout(workout) {
+            const youtubeLink = exerciseLinks[workout.target] || null;
+            if (youtubeLink) {
+                return `<a href="${youtubeLink}" target="_blank" style="color: #337ab7; text-decoration: none;">Watch tutorial</a>`;
+            } else {
+                return 'No link available';
+            }
+        }
+
+        // Generate the workout plan and display
+        document.getElementById('fitnessForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            let tableHTML = `
+                <table class="workout-table">
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>Exercise</th>
+                            <th>Sets/Reps</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
             `;
-        }
 
-        const restDays = 7 - trainingPlan.length;
-        if (restDays > 0) {
-             tableHTML += `
-                <tr>
-                    <td>Rest Days (${restDays} days)</td>
-                    <td>Recovery & Active Rest</td>
-                    <td>N/A</td>
-                    <td>Walk, stretch, and prioritize sleep. Prepare for the next week!</td>
-                </tr>
-            `;
-        }
-    }
-
-    tableHTML += '</tbody></table>';
-    tableHTML += '</div>'; // Close printableWorkout div
-
-    // Add Print/Download buttons
-    tableHTML += `
-        <div class="print-download-buttons">
-            <button onclick="window.print()" style="background-color: #337ab7;">🖨️ Print Workout</button>
-            <button id="downloadPdfButton" style="background-color: #d9534f;">⬇️ Download PDF</button>
-        </div>
-    `;
-    
-    document.getElementById('workoutTableContainer').innerHTML = tableHTML;
-
-    // --- 3. PDF DOWNLOAD LOGIC --- Adding Links in the PDF ---
-    document.getElementById('downloadPdfButton').addEventListener('click', function() {
-        const element = document.getElementById('printableWorkout');
-        const { jsPDF } = window.jspdf;
-
-        // Use html2canvas to render the HTML content to an image canvas
-        html2canvas(element, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true,
-            logging: false,
-            scrollX: 0,
-            scrollY: -window.scrollY // Ensure content is captured from top of page
-        }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-
-            // Add the image (content) to the PDF
-            const imgProps = pdf.getImageProperties(imgData);
-            const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
-
-            // Add YouTube video links at the bottom of the page
-            const exercises = ['Plank', 'Push-up', 'Squat', 'Burpee', 'Lunge', 'Deadlift', 'Overhead Press', 'Dumbbell Row', 'Lat Pulldown', 'Leg Press'];
-            exercises.forEach((exercise, index) => {
-                const yPosition = pdfHeight - 10 - (index * 10); // Add some space between each link
-                const videoUrl = exerciseLinks[exercise];
-                if (videoUrl) {
-                    pdf.textWithLink(`${exercise}: Watch tutorial`, 10, yPosition, { url: videoUrl });
+            // Generate the workout table
+            for (let week = 1; week <= 4; week++) {
+                tableHTML += `<tr><td colspan="4" class="week-header">🔥 WEEK ${week}: Base Building / Progressive Overload Focus</td></tr>`;
+                for (let i = 0; i < trainingPlan.length; i++) {
+                    const workout = trainingPlan[i];
+                    const youtubeLink = addYouTubeLinksToWorkout(workout);
+                    tableHTML += `
+                        <tr>
+                            <td>${workout.day}</td>
+                            <td><strong>${workout.target}</strong></td>
+                            <td>${workout.setsReps}</td>
+                            <td>${workout.notes} <br> ${youtubeLink}</td>
+                        </tr>
+                    `;
                 }
-            });
+            }
 
-            // Save the PDF
-            pdf.save('4-Week-Fitness-Plan-with-Video-Links.pdf');
+            tableHTML += '</tbody></table>';
+            tableHTML += `
+                <button id="downloadPdfButton">Download PDF with Tutorials</button>
+            `;
+            document.getElementById('workoutTableContainer').innerHTML = tableHTML;
         });
-    });
-});
+
+        // PDF Download Logic
+        document.getElementById('workoutTableContainer').addEventListener('click', function(event) {
+            if (event.target && event.target.id === 'downloadPdfButton') {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+
+                // Create a table and add to PDF
+                const workoutTableHTML = document.querySelector('.workout-table').outerHTML;
+                pdf.html(workoutTableHTML, {
+                    callback: function (doc) {
+                        // Add YouTube links to the PDF
+                        doc.addPage();
+                        doc.setFontSize(12);
+                        doc.text("YouTube Exercise Tutorials:", 10, 10);
+                        
+                        let yPos = 20;
+                        for (let i = 0; i < trainingPlan.length; i++) {
+                            const workout = trainingPlan[i];
+                            const youtubeLink = exerciseLinks[workout.target];
+                            if (youtubeLink) {
+                                doc.text(`${workout.target}: ${youtubeLink}`, 10, yPos);
+                                yPos += 10;
+                            }
+                        }
+
+                        doc.save('Workout-Plan-With-Tutorials.pdf');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
